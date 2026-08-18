@@ -1,7 +1,8 @@
 # Governance
 
 LUMINA Wearables is maintained by the HarvardGlobal – Division of Clinical
-Information, Beth Israel maintainers and approved contributors.
+Information, BIDMC (Beth Israel Deaconess Medical Center), maintainers and
+approved contributors.
 
 Maintainers review pull requests for correctness, tests, documentation,
 security, provenance, and the meaning of health-data mappings. A maintainer
