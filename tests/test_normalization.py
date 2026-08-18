@@ -53,3 +53,21 @@ def test_omits_missing_values_without_substitution():
     )
 
     assert samples == []
+
+
+def test_does_not_mislabel_whoop_rmssd_as_sdnn():
+    samples = normalize_recovery_summaries(
+        [
+            RecoverySummary(
+                date=date(2026, 8, 17),
+                source=SourceMetadata(provider="whoop"),
+                resting_heart_rate_bpm=51,
+                # The pinned Open Wearables recovery endpoint currently puts
+                # WHOOP's source field hrv_rmssd_milli in this SDNN-labelled
+                # response field. It must not be promoted as SDNN.
+                avg_hrv_sdnn_ms=63.2,
+            )
+        ]
+    )
+
+    assert [sample.metric_key for sample in samples] == ["resting_hr"]

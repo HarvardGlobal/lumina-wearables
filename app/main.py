@@ -8,7 +8,7 @@ from app.normalization import normalize_recovery_summaries
 from app.open_wearables import OpenWearablesClient
 from app.settings import OpenWearablesConfigurationError, OpenWearablesSettings
 
-app = FastAPI(title="LUMINA Wearables", version="1.1.0")
+app = FastAPI(title="LUMINA Wearables", version="1.1.1")
 
 
 @app.get("/health")

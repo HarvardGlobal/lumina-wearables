@@ -2,6 +2,11 @@
 
 from app.models import CanonicalWearableSample, RecoverySummary
 
+# At the pinned Open Wearables revision, the daily recovery endpoint exposes a
+# WHOOP RMSSD value through the field named ``avg_hrv_sdnn_ms``. Until upstream
+# corrects that contract, only providers whose field is proven SDNN may emit it.
+SDNN_RECOVERY_PROVIDERS = frozenset({"apple", "garmin"})
+
 
 def normalize_recovery_summaries(
     summaries: list[RecoverySummary],
@@ -29,7 +34,10 @@ def normalize_recovery_summaries(
                     source_metric="recovery.resting_heart_rate_bpm",
                 )
             )
-        if summary.avg_hrv_sdnn_ms is not None:
+        if (
+            summary.avg_hrv_sdnn_ms is not None
+            and summary.source.provider.casefold() in SDNN_RECOVERY_PROVIDERS
+        ):
             samples.append(
                 CanonicalWearableSample(
                     **common,

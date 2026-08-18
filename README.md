@@ -5,7 +5,7 @@ LUMINA Wearables is a small, independently deployable boundary between
 platforms. It is designed to be useful to PRomop adopters who do **not** run
 the wider LUMINA Core stack.
 
-Current release: `1.1.0`.
+Current release: `1.1.1`.
 
 ## First pilot: daily resting HR and HRV-SDNN
 
@@ -24,6 +24,10 @@ and vocabulary rules are separately approved.
 
 The full human lookup table is [docs/metric-cheat-sheet.md](docs/metric-cheat-sheet.md).
 It is documentation only; no service reads it at runtime.
+
+The table includes the full source-device → Open Wearables → LUMINA flow for
+Apple Health, Garmin, WHOOP, Fitbit, and Google Health Connect. It also states
+which providers are ready for each pilot statistic and which are not.
 
 ## Run it by itself
 
