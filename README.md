@@ -5,7 +5,7 @@ LUMINA Wearables is a small, independently deployable boundary between
 platforms. It is designed to be useful to PRomop adopters who do **not** run
 the wider LUMINA Core stack.
 
-Current release: `1.1.1`.
+Current release: `1.1.2`.
 
 ## First pilot: daily resting HR and HRV-SDNN
 
@@ -81,6 +81,8 @@ For a full LUMINA deployment, original Open Wearables responses can later be
 preserved in Archive before selected daily metrics are promoted to PRomop.
 That Archive path is also intentionally deferred: it needs an approved raw
 payload/provenance and retention contract, not an implicit copy of data.
+The required separation of raw source, device context, and mapping versions is
+described in Core's `docs/architecture/wearable-data-lineage.md`.
 
 ## Versioning and Core orchestration
 
