@@ -2,7 +2,7 @@
 
 ## Current, safe boundary
 
-LUMINA Wearables `1.1.2` produces read-only previews of two exact daily metrics
+LUMINA Wearables `1.1.3` produces read-only previews of two exact daily metrics
 from Open Wearables: `resting_hr` and `hrv_sdnn`. It has no PRomop database
 credentials and does not write to PRomop.
 

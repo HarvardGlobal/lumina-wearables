@@ -1,0 +1,33 @@
+name: Bug report
+description: Report a reproducible problem without sharing sensitive data.
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: "Do not include patient data, credentials, tokens, or production URLs. Use private security reporting for vulnerabilities."
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Describe the observed and expected behavior using synthetic data only.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Affected version or commit
+      placeholder: "e.g. 1.1.3"
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Safe steps to reproduce
+      description: Use redacted configuration and synthetic examples only.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context

@@ -5,7 +5,17 @@ LUMINA Wearables is a small, independently deployable boundary between
 platforms. It is designed to be useful to PRomop adopters who do **not** run
 the wider LUMINA Core stack.
 
-Current release: `1.1.2`.
+## Project status and open source
+
+This is research health-data infrastructure, not clinical decision support.
+Deployers remain responsible for the privacy, security, governance, validation,
+and regulatory controls required for their setting.
+
+LUMINA Wearables is licensed under [Apache-2.0](LICENSE). Please read
+[CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and the
+[Code of Conduct](CODE_OF_CONDUCT.md) before participating.
+
+Current release: `1.1.3`.
 
 ## First pilot: daily resting HR and HRV-SDNN
 
