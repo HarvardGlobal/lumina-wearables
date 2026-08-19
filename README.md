@@ -39,6 +39,12 @@ The table includes the full source-device → Open Wearables → LUMINA flow for
 Apple Health, Garmin, WHOOP, Fitbit, and Google Health Connect. It also states
 which providers are ready for each pilot statistic and which are not.
 
+The intended standardisation route is **Open Wearables → LUMINA semantic
+validation → LOINC code → local OMOP concept from a pinned Athena vocabulary
+release → PRomop**. Athena is a vocabulary-release source, not a live runtime
+conversion service. The complete strategy and initial mapping candidates are
+in [docs/omop-vocabulary-mapping.md](docs/omop-vocabulary-mapping.md).
+
 ## Run it by itself
 
 First deploy and configure Open Wearables according to its upstream guidance.

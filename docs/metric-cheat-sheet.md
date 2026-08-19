@@ -13,6 +13,19 @@ this guide require the same semantic review as a mapping change.
 **Scope:** initial read-only LUMINA flow. No data is yet written to PRomop or
 Archive by this service.
 
+## Standardisation path
+
+```text
+Device/provider -> Open Wearables -> LUMINA semantic validation -> LOINC code
+-> local OMOP concept from a pinned Athena vocabulary release -> PRomop/OMOP
+```
+
+Athena supplies the OMOP vocabulary release loaded into PRomop; it is not a
+live translation step. PRomop resolves the approved `(vocabulary_id,
+concept_code)` pair to its local numeric OMOP `concept_id` before a write. See
+[omop-vocabulary-mapping.md](omop-vocabulary-mapping.md) for the required
+release, validation, and provenance rules.
+
 | LUMINA key | Meaning and temporal resolution | Open Wearables source | Unit | PRomop status | OMOP concept in current PRomop | Rules / exclusions |
 | --- | --- | --- | --- | --- | --- | --- |
 | `resting_hr` | Provider-supplied daily resting heart rate | `RecoverySummary.resting_heart_rate_bpm` | `/min` | Proposed machine-to-machine import; native uploads already map it | LOINC `40443-4`, Measurement | Do not substitute raw `heart_rate` or a daily average. Preserve provider/device provenance. |

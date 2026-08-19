@@ -32,6 +32,13 @@ The expected initial OMOP decisions should be reviewed by the PRomop maintainers
 | `resting_hr` | LOINC `40443-4` | Measurement | `/min` |
 | `hrv_sdnn` | LOINC `80404-7` | Measurement | `ms` |
 
+The LOINC code is resolved by PRomop against its local OMOP vocabulary loaded
+from a specific Athena release; LUMINA Wearables does not call Athena at
+runtime. The contract must record that vocabulary release and the resolved
+OMOP `concept_id`, and reject an inactive, missing, non-standard, or
+wrong-domain concept. The full strategy is in
+[omop-vocabulary-mapping.md](omop-vocabulary-mapping.md).
+
 ## Future Archive route
 
 For full LUMINA installations, first persist the original Open Wearables
