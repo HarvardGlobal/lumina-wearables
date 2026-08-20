@@ -11,8 +11,9 @@ source-equivalent, date-stamped Open Wearables fields are emitted automatically.
 **Pinned Open Wearables source:** `0.7.0` at commit
 `cb3ad1fd1141138179d27f7e787a1d0049a071c9`
 
-**Scope:** initial LUMINA flow. The protected exporter can write the two
-approved daily metrics to PRomop; this service does not write to Archive yet.
+**Scope:** the protected exporter implements all 18 current PRomop wearable
+metrics. It automatically emits only those with an exact, date-stamped Open
+Wearables summary field; this service does not write to Archive yet.
 
 ## Standardisation path
 
@@ -30,10 +31,25 @@ provenance rules.
 
 | LUMINA key | Meaning and temporal resolution | Open Wearables source | Unit | PRomop status | OMOP concept in current PRomop | Rules / exclusions |
 | --- | --- | --- | --- | --- | --- | --- |
-| `resting_hr` | Provider-supplied daily resting heart rate | `RecoverySummary.resting_heart_rate_bpm` | `/min` | Exporter allow-list; writes through PRomop's generic Measurement API | LOINC `40443-4`, Measurement | Do not substitute raw `heart_rate` or a daily average. Preserve provider/device provenance. |
-| `hrv_sdnn` | Provider-supplied daily average HRV explicitly measured as SDNN | `RecoverySummary.avg_hrv_sdnn_ms` | `ms` | Exporter allow-list; writes through PRomop's generic Measurement API | LOINC `80404-7`, Measurement | Never map RMSSD to SDNN. No imputation or aggregation beyond the source summary. |
-| `hrv_rmssd` | HRV measured as RMSSD | Open Wearables time series `heart_rate_variability_rmssd` | `ms` | Registry/export mapping implemented | Local `HK-Wearable:HK-WEAR-HRV-RMSSD`, Measurement | No verified daily summary source in this Open Wearables pin; never substitute for SDNN. |
-| `heart_rate` | Timestamped or interval heart rate | Open Wearables time series `heart_rate` | `bpm` | Archive candidate | None for raw samples | High-frequency source data is not promoted directly to OMOP measurements. Preserve original samples only after the Archive contract is approved. |
+| `steps` | Daily step count | ActivitySummary.`steps` | `/d` | Automatic export | LOINC `55423-8`, Observation | Exact daily summary field. |
+| `active_minutes` | Daily activity duration | ActivitySummary.`active_minutes` | `min` | Automatic export | LOINC `55411-3`, Observation | Exact daily summary field. |
+| `resting_hr` | Daily resting heart rate | RecoverySummary.`resting_heart_rate_bpm` | `/min` | Automatic export | LOINC `40443-4`, Measurement | Never substitute raw or average HR. |
+| `hrv_sdnn` | Daily HRV explicitly labelled SDNN | RecoverySummary.`avg_hrv_sdnn_ms` | `ms` | Automatic export for Apple/Garmin | LOINC `80404-7`, Measurement | WHOOP RMSSD is blocked; never substitute RMSSD. |
+| `hrv_rmssd` | Daily HRV measured as RMSSD | No verified daily summary field | `ms` | Registry/export mapping only | HK-Wearable `HK-WEAR-HRV-RMSSD`, Measurement | Await a verified daily RMSSD source contract. |
+| `spo2` | Daily oxygen saturation | RecoverySummary.`avg_spo2_percent`; SleepSummary fallback | `%` | Automatic export | LOINC `59408-5`, Measurement | Recovery takes precedence when both exist. |
+| `respiratory_rate` | Daily respiratory rate | SleepSummary.`avg_respiratory_rate` | `/min` | Automatic export | LOINC `9279-1`, Measurement | Exact sleep-summary field. |
+| `sleep_duration` | Daily main-sleep duration | SleepSummary.`duration_minutes` | `h` | Automatic export | LOINC `93832-4`, Observation | Lossless minutes-to-hours conversion only. |
+| `vo2_max` | VO₂ max | No verified summary field | `mL/kg/min` | Registry/export mapping only | LOINC `94122-9`, Measurement | Not inferred from activity or score data. |
+| `distance` | Walking distance | Generic activity distance is not accepted | `km` | Registry/export mapping only | LOINC `41953-1`, Measurement | Do not label non-walking distance as walking. |
+| `walking_speed` | Daily walking speed | No verified summary field | `km/hr` | Registry/export mapping only | LOINC `41957-2`, Measurement | Requires source-confirmed walking context. |
+| `walking_step_length` | Walking step length | No verified summary field | `cm` | Registry/export mapping only | HK-Wearable `HK-WEAR-STEP-LENGTH`, Measurement | Requires source-confirmed gait context. |
+| `walking_double_support_pct` | Walking double-support percentage | No verified summary field | `%` | Registry/export mapping only | HK-Wearable `HK-WEAR-DBL-SUPPORT`, Measurement | Requires source-confirmed gait context. |
+| `walking_hr_avg` | Walking mean HR | No verified summary field | `/min` | Registry/export mapping only | HK-Wearable `HK-WEAR-WALK-HR`, Measurement | Requires source-confirmed walking context. |
+| `flights_climbed` | Daily floors/flights climbed | ActivitySummary.`floors_climbed` | `{flights}` | Automatic export | LOINC `100304-5`, Observation | Upstream defines floors from elevation. |
+| `active_energy` | Daily active energy | ActivitySummary.`active_calories_kcal` | `kcal` | Automatic export | LOINC `93819-1`, Measurement | Exact active-energy field. |
+| `basal_energy` | Daily basal energy | No separate basal-energy field | `kcal` | Registry/export mapping only | HK-Wearable `HK-WEAR-BASAL-ENERGY`, Measurement | Never derive from total calories. |
+| `body_mass` | Body mass | BodySummary latest weight lacks measurement date | `kg` | Registry/export mapping only | LOINC `29463-7`, Measurement | Never assign today's date to an undated value. |
+| `heart_rate` | Timestamped/interval heart rate | Open Wearables time series `heart_rate` | `bpm` | Archive candidate, not registry export | None | High-frequency samples are not daily resting-HR Measurements. |
 
 ## Device-to-LUMINA flow
 
@@ -58,16 +74,18 @@ export—not that every provider supplies every registry metric.
 
 ### Provider availability decision
 
-- **Apple Health and Garmin:** yes, begin with daily resting HR and SDNN as the
-  first two statistics once their Open Wearables connections are configured.
-- **WHOOP:** begin with daily resting HR. Its HRV is RMSSD—not SDNN—and remains
-  distinct until the RMSSD promotion decision is approved.
+- **Apple Health and Garmin:** their configured Open Wearables activity, sleep,
+  and recovery summaries can export the verified fields in the full table.
+  SDNN remains restricted to these providers.
+- **WHOOP:** its verified daily summary fields can export, but its HRV is
+  RMSSD—not SDNN—and remains blocked until a verified daily RMSSD contract is
+  available.
 - **Fitbit:** no, not for the initial daily HR/HRV pilot. At this pinned Open
   Wearables release it provides workouts only; Fitbit sleep, intraday heart
   rate, and HRV processing are not implemented.
 - **Google devices:** distinguish Fitbit from Google Health Connect. Health
-  Connect can provide resting HR and RMSSD, but it is a later Android SDK path,
-  not a substitute for Fitbit support.
+  Connect may provide resting HR and RMSSD, but it remains a later Android SDK
+  path and is not a substitute for Fitbit support.
 
 ### Current upstream safety restriction
 
