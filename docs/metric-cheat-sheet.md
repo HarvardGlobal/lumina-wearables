@@ -5,7 +5,8 @@ reviewers. This file is not loaded by LUMINA Wearables or any other software.
 The authoritative runnable behaviour is covered by code and tests; changes to
 this guide require the same semantic review as a mapping change.
 
-**Pilot mapping version:** `0.1.1`
+**Mapping registry:** all 18 current PRomop wearable metrics; only
+source-equivalent, date-stamped Open Wearables fields are emitted automatically.
 
 **Pinned Open Wearables source:** `0.7.0` at commit
 `cb3ad1fd1141138179d27f7e787a1d0049a071c9`
@@ -31,15 +32,15 @@ provenance rules.
 | --- | --- | --- | --- | --- | --- | --- |
 | `resting_hr` | Provider-supplied daily resting heart rate | `RecoverySummary.resting_heart_rate_bpm` | `/min` | Exporter allow-list; writes through PRomop's generic Measurement API | LOINC `40443-4`, Measurement | Do not substitute raw `heart_rate` or a daily average. Preserve provider/device provenance. |
 | `hrv_sdnn` | Provider-supplied daily average HRV explicitly measured as SDNN | `RecoverySummary.avg_hrv_sdnn_ms` | `ms` | Exporter allow-list; writes through PRomop's generic Measurement API | LOINC `80404-7`, Measurement | Never map RMSSD to SDNN. No imputation or aggregation beyond the source summary. |
-| `hrv_rmssd` | HRV measured as RMSSD | Open Wearables time series `heart_rate_variability_rmssd` | `ms` | Deferred | Current PRomop uses local `HK-Wearable:HK-WEAR-HRV-RMSSD` | Requires an approved daily aggregation rule and explicit provenance. Not emitted by this pilot. |
-| `heart_rate` | Timestamped or interval heart rate | Open Wearables time series `heart_rate` | `bpm` | Deferred / Archive candidate | None for raw samples | High-frequency source data is not promoted directly to OMOP measurements. Preserve original samples only after the Archive contract is approved. |
+| `hrv_rmssd` | HRV measured as RMSSD | Open Wearables time series `heart_rate_variability_rmssd` | `ms` | Registry/export mapping implemented | Local `HK-Wearable:HK-WEAR-HRV-RMSSD`, Measurement | No verified daily summary source in this Open Wearables pin; never substitute for SDNN. |
+| `heart_rate` | Timestamped or interval heart rate | Open Wearables time series `heart_rate` | `bpm` | Archive candidate | None for raw samples | High-frequency source data is not promoted directly to OMOP measurements. Preserve original samples only after the Archive contract is approved. |
 
 ## Device-to-LUMINA flow
 
 This is the operational lookup table: it records the source variable name,
 Open Wearables' normalized name, and the LUMINA treatment. “Ready” means it is
-safe for the current pilot and, for the two approved metrics, eligible for an
-explicit protected PRomop export—not that every provider supplies every metric.
+safe for the current pilot and eligible for an explicit protected PRomop
+export—not that every provider supplies every registry metric.
 
 | Device / provider | Connection into Open Wearables | Source device or provider variable | Open Wearables normalized variable | LUMINA name and current treatment | Status |
 | --- | --- | --- | --- | --- | --- |

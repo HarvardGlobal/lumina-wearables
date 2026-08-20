@@ -5,7 +5,7 @@ from uuid import UUID
 import httpx
 from fastapi import FastAPI, Header, HTTPException, Path, Query
 
-from app.normalization import normalize_recovery_summaries
+from app.normalization import normalize_daily_summaries, normalize_recovery_summaries
 from app.open_wearables import OpenWearablesClient
 from app.promop import PromopClient, PromopExportError, PromopSettings
 from app.settings import (
@@ -15,13 +15,23 @@ from app.settings import (
     WearablesExportSettings,
 )
 
-app = FastAPI(title="LUMINA Wearables", version="1.1.5")
+app = FastAPI(title="LUMINA Wearables", version="1.2.0")
 
 
 def approved_daily_samples(user_id: UUID, start_date: date, end_date: date):
     settings = OpenWearablesSettings.from_environment()
     with OpenWearablesClient(settings) as client:
         return normalize_recovery_summaries(client.get_recovery_summaries(user_id, start_date, end_date))
+
+
+def approved_daily_summary_samples(user_id: UUID, start_date: date, end_date: date):
+    settings = OpenWearablesSettings.from_environment()
+    with OpenWearablesClient(settings) as client:
+        return normalize_daily_summaries(
+            client.get_activity_summaries(user_id, start_date, end_date),
+            client.get_sleep_summaries(user_id, start_date, end_date),
+            client.get_recovery_summaries(user_id, start_date, end_date),
+        )
 
 
 def require_export_token(authorization: str | None = Header(default=None)) -> WearablesExportSettings:
@@ -66,6 +76,20 @@ def daily_recovery(
     }
 
 
+@app.get("/api/v1/open-wearables/users/{user_id}/daily-summaries")
+def daily_summaries(user_id: UUID, start_date: date = Query(...), end_date: date = Query(...)):
+    """Preview all source-equivalent daily Open Wearables metrics approved for PRomop."""
+    if end_date < start_date:
+        raise HTTPException(status_code=422, detail="end_date must not precede start_date")
+    try:
+        samples = approved_daily_summary_samples(user_id, start_date, end_date)
+    except OpenWearablesConfigurationError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+    except httpx.HTTPError as error:
+        raise HTTPException(status_code=502, detail="Open Wearables request failed") from error
+    return {"data": [sample.model_dump(mode="json") for sample in samples], "source": "open-wearables", "write_status": "preview-only"}
+
+
 @app.post("/api/v1/promop/persons/{person_id}/open-wearables/users/{user_id}/daily-recovery/export")
 def export_daily_recovery_to_promop(
     user_id: UUID,
@@ -103,3 +127,26 @@ def export_daily_recovery_to_promop(
         "source": "open-wearables",
         "receipt": receipt,
     }
+
+
+@app.post("/api/v1/promop/persons/{person_id}/open-wearables/users/{user_id}/daily-summaries/export")
+def export_daily_summaries_to_promop(
+    user_id: UUID,
+    person_id: int = Path(gt=0),
+    start_date: date = Query(...),
+    end_date: date = Query(...),
+    authorization: str | None = Header(default=None),
+):
+    """Export all verified, date-stamped Open Wearables daily summaries to PRomop."""
+    if end_date < start_date:
+        raise HTTPException(status_code=422, detail="end_date must not precede start_date")
+    try:
+        export_settings = require_export_token(authorization)
+        samples = approved_daily_summary_samples(user_id, start_date, end_date)
+        with PromopClient(PromopSettings(export_settings.promop_base_url, export_settings.promop_service_token, export_settings.timeout_seconds)) as client:
+            receipt = client.export_daily_samples(person_id=person_id, samples=samples)
+    except (OpenWearablesConfigurationError, WearablesExportConfigurationError) as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+    except (httpx.HTTPError, PromopExportError) as error:
+        raise HTTPException(status_code=502, detail=str(error)) from error
+    return {"person_id": person_id, "exported_samples": len(samples), "source": "open-wearables", "receipt": receipt}

@@ -41,9 +41,24 @@ preserved source data must not be rewritten.
 
 | LUMINA canonical key | Meaning | LOINC code | Expected OMOP domain | UCUM unit | Status |
 | --- | --- | --- | --- | --- | --- |
-| `resting_hr` | Provider-supplied daily resting heart rate | `40443-4` | Measurement | `/min` | Implemented exporter allow-list |
-| `hrv_sdnn` | Provider-supplied daily HRV explicitly measured as SDNN | `80404-7` | Measurement | `ms` | Implemented exporter allow-list |
-| `hrv_rmssd` | HRV measured as RMSSD | No approved standard LOINC mapping in this project | To be decided | `ms` | Deferred; never substitute for SDNN |
+| `steps` | Daily step count | `55423-8` | Observation | `/d` | Direct Open Wearables activity-summary export |
+| `active_minutes` | Daily activity duration | `55411-3` | Observation | `min` | Direct Open Wearables activity-summary export |
+| `resting_hr` | Daily resting heart rate | `40443-4` | Measurement | `/min` | Direct recovery-summary export |
+| `hrv_sdnn` | Daily HRV explicitly measured as SDNN | `80404-7` | Measurement | `ms` | Direct for Apple/Garmin only; WHOOP RMSSD guard remains |
+| `hrv_rmssd` | HRV measured as RMSSD | `HK-WEAR-HRV-RMSSD` | Measurement | `ms` | Export mapping implemented; no verified daily summary source in this pin |
+| `spo2` | Daily oxygen saturation | `59408-5` | Measurement | `%` | Direct recovery summary, otherwise sleep summary |
+| `respiratory_rate` | Daily respiratory rate | `9279-1` | Measurement | `/min` | Direct sleep-summary export |
+| `sleep_duration` | Daily main-sleep duration | `93832-4` | Observation | `h` | Direct sleep-summary export; minutes converted to hours |
+| `vo2_max` | VO₂ max | `94122-9` | Measurement | `mL/kg/min` | Export mapping implemented; no verified summary field in this pin |
+| `distance` | Walking distance | `41953-1` | Measurement | `km` | Export mapping implemented; generic activity distance is not assumed walking |
+| `walking_speed` | Walking speed | `41957-2` | Measurement | `km/hr` | Export mapping implemented; no verified summary field in this pin |
+| `walking_step_length` | Walking step length | `HK-WEAR-STEP-LENGTH` | Measurement | `cm` | Export mapping implemented; no verified summary field in this pin |
+| `walking_double_support_pct` | Walking double-support | `HK-WEAR-DBL-SUPPORT` | Measurement | `%` | Export mapping implemented; no verified summary field in this pin |
+| `walking_hr_avg` | Walking mean HR | `HK-WEAR-WALK-HR` | Measurement | `/min` | Export mapping implemented; no verified summary field in this pin |
+| `flights_climbed` | Daily floors/flights climbed | `100304-5` | Observation | `{flights}` | Direct Open Wearables activity-summary export |
+| `active_energy` | Daily active energy | `93819-1` | Measurement | `kcal` | Direct Open Wearables activity-summary export |
+| `basal_energy` | Daily basal energy | `HK-WEAR-BASAL-ENERGY` | Measurement | `kcal` | Export mapping implemented; total calories are not split into basal energy |
+| `body_mass` | Body mass | `29463-7` | Measurement | `kg` | Export mapping implemented; current body summary lacks measurement date |
 
 The codes are a controlled mapping decision, not a value transformation. A
 daily value is accepted only when its source field truly has the stated

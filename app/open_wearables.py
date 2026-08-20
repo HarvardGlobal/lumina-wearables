@@ -5,7 +5,14 @@ from uuid import UUID
 
 import httpx
 
-from app.models import RecoverySummary, RecoverySummaryPage
+from app.models import (
+    ActivitySummary,
+    ActivitySummaryPage,
+    RecoverySummary,
+    RecoverySummaryPage,
+    SleepSummary,
+    SleepSummaryPage,
+)
 from app.settings import OpenWearablesSettings
 
 
@@ -29,16 +36,25 @@ class OpenWearablesClient:
     def get_recovery_summaries(
         self, user_id: UUID, start_date: date, end_date: date
     ) -> list[RecoverySummary]:
-        params = {
+        return self._get_summaries(user_id, start_date, end_date, "recovery", RecoverySummaryPage)
+
+    def get_activity_summaries(self, user_id: UUID, start_date: date, end_date: date) -> list[ActivitySummary]:
+        return self._get_summaries(user_id, start_date, end_date, "activity", ActivitySummaryPage)
+
+    def get_sleep_summaries(self, user_id: UUID, start_date: date, end_date: date) -> list[SleepSummary]:
+        return self._get_summaries(user_id, start_date, end_date, "sleep", SleepSummaryPage)
+
+    def _get_summaries(self, user_id: UUID, start_date: date, end_date: date, kind: str, page_type):
+        params: dict[str, str | int] = {
             "start_date": start_date.isoformat(),
             "end_date": end_date.isoformat(),
             "limit": 100,
         }
-        summaries: list[RecoverySummary] = []
+        summaries = []
         while True:
-            response = self._client.get(f"/users/{user_id}/summaries/recovery", params=params)
+            response = self._client.get(f"/users/{user_id}/summaries/{kind}", params=params)
             response.raise_for_status()
-            page = RecoverySummaryPage.model_validate(response.json())
+            page = page_type.model_validate(response.json())
             summaries.extend(page.data)
             if not page.pagination or not page.pagination.has_more or not page.pagination.next_cursor:
                 return summaries

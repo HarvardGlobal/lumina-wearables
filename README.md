@@ -15,19 +15,30 @@ LUMINA Wearables is licensed under [Apache-2.0](LICENSE). Please read
 [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and the
 [Code of Conduct](CODE_OF_CONDUCT.md) before participating.
 
-Current release: `1.1.5`.
+Current release: `1.2.0`.
 
-## First pilot: daily resting HR and HRV-SDNN
+## Daily-summary export and full PRomop registry
 
-The pilot reads Open Wearables' daily recovery summaries and returns only two
-semantically exact, daily records:
+The service implements PRomop's full current wearable registry (18 controlled
+LOINC/HK-Wearable mappings). Its automatic Open Wearables route emits only the
+source-equivalent, date-stamped fields currently exposed by activity, sleep,
+and recovery summaries:
 
 | LUMINA key | Open Wearables field | Unit | Why it is included |
 | --- | --- | --- | --- |
 | `resting_hr` | `resting_heart_rate_bpm` | `/min` | Provider-supplied daily resting heart rate |
 | `hrv_sdnn` | `avg_hrv_sdnn_ms` | `ms` | Provider-supplied daily HRV explicitly labelled SDNN |
+| `steps` | activity `steps` | `/d` | Provider-supplied daily step count |
+| `active_minutes` | activity `active_minutes` | `min` | Provider-supplied daily activity duration |
+| `flights_climbed` | activity `floors_climbed` | `{flights}` | Provider-supplied daily floors climbed |
+| `active_energy` | activity `active_calories_kcal` | `kcal` | Provider-supplied daily active energy |
+| `sleep_duration` | sleep `duration_minutes` | `h` | Main-sleep duration, converted from minutes |
+| `respiratory_rate` | sleep `avg_respiratory_rate` | `/min` | Provider-supplied daily sleep respiratory rate |
+| `spo2` | recovery/sleep `avg_spo2_percent` | `%` | Daily oxygen saturation; recovery takes precedence |
 
-No calculation, imputation, unit conversion, or silent substitution is made.
+No calculation, imputation, or silent substitution is made. The sole unit
+conversion is the lossless `duration_minutes ÷ 60` conversion required for
+PRomop's approved sleep-duration unit of hours.
 In particular, raw continuous heart rate is not a daily resting-HR measure,
 and HRV-RMSSD is not SDNN. They remain out of scope until their aggregation
 and vocabulary rules are separately approved.
@@ -65,10 +76,10 @@ docker run --rm -p 8300:8300 \
 curl http://localhost:8300/health
 ```
 
-To preview one user's daily canonical samples, call:
+To preview the full verified daily-summary set, call:
 
 ```bash
-curl 'http://localhost:8300/api/v1/open-wearables/users/<open-wearables-user-uuid>/daily-recovery?start_date=2026-08-01&end_date=2026-08-17'
+curl 'http://localhost:8300/api/v1/open-wearables/users/<open-wearables-user-uuid>/daily-summaries?start_date=2026-08-01&end_date=2026-08-17'
 ```
 
 The preview endpoint is deliberately read-only and returns `"write_status":
@@ -77,7 +88,7 @@ The preview endpoint is deliberately read-only and returns `"write_status":
 ## Export to PRomop
 
 The protected export endpoint sends only approved daily samples to PRomop's
-existing concept-lookup and generic Measurement APIs. It resolves LOINC codes
+existing concept-lookup and generic Measurement/Observation APIs. It resolves LOINC codes
 against the vocabulary loaded by that PRomop deployment at write time; it does
 not hard-code Athena numeric concept IDs. The request must supply an explicit,
 authorised PRomop person ID. An Open Wearables user UUID is never treated as a
@@ -85,7 +96,7 @@ clinical identity.
 
 ```bash
 curl -X POST \
-  'http://localhost:8300/api/v1/promop/persons/<promop-person-id>/open-wearables/users/<open-wearables-user-uuid>/daily-recovery/export?start_date=2026-08-01&end_date=2026-08-17' \
+  'http://localhost:8300/api/v1/promop/persons/<promop-person-id>/open-wearables/users/<open-wearables-user-uuid>/daily-summaries/export?start_date=2026-08-01&end_date=2026-08-17' \
   -H 'Authorization: Bearer <LUMINA_WEARABLES_EXPORT_TOKEN>'
 ```
 
