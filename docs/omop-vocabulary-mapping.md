@@ -19,7 +19,8 @@ This sequence deliberately separates three different jobs:
    provider/device provenance, and mapping version. It assigns only an
    approved canonical metric key and LOINC code.
 3. **PRomop** resolves the `(vocabulary_id, concept_code)` pair against its
-   locally loaded OMOP vocabulary and writes the OMOP record.
+   locally loaded OMOP vocabulary and writes the OMOP record. It also owns its
+   local HK-Wearable concepts and PatientRecord aggregation.
 
 ## Athena is a vocabulary-release source, not a runtime hop
 
@@ -39,8 +40,8 @@ preserved source data must not be rewritten.
 
 | LUMINA canonical key | Meaning | LOINC code | Expected OMOP domain | UCUM unit | Status |
 | --- | --- | --- | --- | --- | --- |
-| `resting_hr` | Provider-supplied daily resting heart rate | `40443-4` | Measurement | `/min` | Candidate for the first authenticated import |
-| `hrv_sdnn` | Provider-supplied daily HRV explicitly measured as SDNN | `80404-7` | Measurement | `ms` | Candidate for the first authenticated import |
+| `resting_hr` | Provider-supplied daily resting heart rate | `40443-4` | Measurement | `/min` | Implemented exporter allow-list |
+| `hrv_sdnn` | Provider-supplied daily HRV explicitly measured as SDNN | `80404-7` | Measurement | `ms` | Implemented exporter allow-list |
 | `hrv_rmssd` | HRV measured as RMSSD | No approved standard LOINC mapping in this project | To be decided | `ms` | Deferred; never substitute for SDNN |
 
 The codes are a controlled mapping decision, not a value transformation. A
@@ -50,25 +51,25 @@ daily resting heart rate; RMSSD is not SDNN.
 
 ## Write-time acceptance rules
 
-Before PRomop writes an OMOP row, its authenticated import contract must:
+The implemented PRomop integration does the following before a row is written:
 
 1. Require an explicitly authorised PRomop person ID; never derive identity
    from a provider user ID or device ID.
-2. Accept only an approved LUMINA canonical key, mapping version, value, UCUM
-   unit, day-level date, provider/device provenance, and idempotency key.
+2. Accept only an approved LUMINA canonical key, expected unit, and daily date.
 3. Resolve the declared LOINC code using both `vocabulary_id = LOINC` and
-   `concept_code`, then reject inactive, non-standard, missing, or
-   wrong-domain concepts.
-4. Record the resolved OMOP `concept_id`, vocabulary-release identifier,
-   source code/value/unit, and all source provenance in the resulting OMOP
-   row and promotion receipt.
-5. Return an all-or-nothing receipt containing created or reused OMOP IDs.
+   `concept_code`; a missing mapping fails closed.
+4. Send the resolved local `concept_id`, source code/value/unit, and
+   `measurement_type_concept=32865` to PRomop, returning its receipt and the
+   lookup's vocabulary-version metadata.
+5. Leave concept status/domain enforcement, idempotency/upserts, auditing, and
+   PatientRecord aggregation to PRomop's existing API implementation.
 
 ## Archive relationship
 
-For a full LUMINA deployment, Archive preserves the original Open Wearables
+For a full LUMINA deployment, Archive will preserve the original Open Wearables
 response before any derived metric is promoted. The derived record must link to
 the raw object, Open Wearables version, LUMINA mapping version, Athena
 vocabulary release, device/provider context, and PRomop receipt. The current
-Wearables API remains preview-only until these authenticated Archive and PRomop
-contracts are implemented and tested.
+Wearables API preview remains read-only, while the separate protected PRomop
+export route is implemented and tested. Archive preservation remains deferred
+until its dedicated authenticated contract is implemented and tested.

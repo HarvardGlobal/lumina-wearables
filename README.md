@@ -15,7 +15,7 @@ LUMINA Wearables is licensed under [Apache-2.0](LICENSE). Please read
 [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and the
 [Code of Conduct](CODE_OF_CONDUCT.md) before participating.
 
-Current release: `1.1.3`.
+Current release: `1.1.4`.
 
 ## First pilot: daily resting HR and HRV-SDNN
 
@@ -39,11 +39,11 @@ The table includes the full source-device → Open Wearables → LUMINA flow for
 Apple Health, Garmin, WHOOP, Fitbit, and Google Health Connect. It also states
 which providers are ready for each pilot statistic and which are not.
 
-The intended standardisation route is **Open Wearables → LUMINA semantic
-validation → LOINC code → local OMOP concept from a pinned Athena vocabulary
-release → PRomop**. Athena is a vocabulary-release source, not a live runtime
-conversion service. The complete strategy and initial mapping candidates are
-in [docs/omop-vocabulary-mapping.md](docs/omop-vocabulary-mapping.md).
+The implemented standardisation route is **Open Wearables → LUMINA semantic
+validation → LOINC code → PRomop's locally loaded Athena vocabulary concept →
+PRomop Measurement**. Athena is a vocabulary-release source, not a live runtime
+conversion service. The complete strategy and initial mapping candidates are in
+[docs/omop-vocabulary-mapping.md](docs/omop-vocabulary-mapping.md).
 
 ## Run it by itself
 
@@ -56,6 +56,9 @@ docker build -t lumina-wearables .
 docker run --rm -p 8300:8300 \
   -e OPEN_WEARABLES_BASE_URL=https://open-wearables.example/api/v1 \
   -e OPEN_WEARABLES_API_KEY=replace-with-secret \
+  -e PROMOP_BASE_URL=https://promop.example.org \
+  -e PROMOP_SERVICE_AUTH_TOKEN=replace-with-promop-service-secret \
+  -e LUMINA_WEARABLES_EXPORT_TOKEN=replace-with-a-separate-secret \
   lumina-wearables
 
 curl http://localhost:8300/health
@@ -67,10 +70,30 @@ To preview one user's daily canonical samples, call:
 curl 'http://localhost:8300/api/v1/open-wearables/users/<open-wearables-user-uuid>/daily-recovery?start_date=2026-08-01&end_date=2026-08-17'
 ```
 
-The endpoint is deliberately read-only and returns `"write_status":
+The preview endpoint is deliberately read-only and returns `"write_status":
 "preview-only"`. It neither writes an OMOP row nor stores data in Archive.
-It must be protected by authenticated network access before a real deployment;
-the development service itself does not provide user authentication.
+
+## Export to PRomop
+
+The protected export endpoint sends only approved daily samples to PRomop's
+existing concept-lookup and generic Measurement APIs. It resolves LOINC codes
+against the vocabulary loaded by that PRomop deployment at write time; it does
+not hard-code Athena numeric concept IDs. The request must supply an explicit,
+authorised PRomop person ID. An Open Wearables user UUID is never treated as a
+clinical identity.
+
+```bash
+curl -X POST \
+  'http://localhost:8300/api/v1/promop/persons/<promop-person-id>/open-wearables/users/<open-wearables-user-uuid>/daily-recovery/export?start_date=2026-08-01&end_date=2026-08-17' \
+  -H 'Authorization: Bearer <LUMINA_WEARABLES_EXPORT_TOKEN>'
+```
+
+`LUMINA_WEARABLES_EXPORT_TOKEN` protects this service endpoint and must be
+different from `PROMOP_SERVICE_AUTH_TOKEN`, which is used only from Wearables
+to PRomop. The result includes the PRomop write receipt and vocabulary-version
+metadata. PRomop applies its own idempotent write and PatientRecord refresh
+behaviour. See [docs/promop-integration.md](docs/promop-integration.md) for the
+exact boundary and fields.
 
 Run the tests with:
 
@@ -80,22 +103,14 @@ python -m pytest -q
 
 ## PRomop and LUMINA Core paths
 
-PRomop's current wearable endpoint accepts native Garmin FIT and Apple Health
-ZIP uploads. It does not expose a documented authenticated endpoint that
-accepts canonical daily samples from this service. Consequently, this release
-does **not** fake a PRomop write by accessing its database or converting data
-into a different provider's file format.
+This service uses PRomop's existing authenticated generic APIs; it does not
+access the PRomop database or convert records into a Garmin FIT/Apple Health
+file. PRomop retains ownership of the OMOP schema, its Athena-loaded vocabulary
+tables, local HK-Wearable concepts, and PatientRecord aggregation.
 
-The next approved integration step is a PRomop-owned, authenticated import
-contract for the two canonical daily records. Its required fields, identity
-binding, idempotency, provenance, and OMOP mapping decisions are documented in
-[docs/promop-integration.md](docs/promop-integration.md). Once PRomop supplies
-that contract, this service can add a tested exporter without requiring
-LUMINA Core.
-
-For a full LUMINA deployment, original Open Wearables responses can later be
+For a full LUMINA deployment, original Open Wearables responses will later be
 preserved in Archive before selected daily metrics are promoted to PRomop.
-That Archive path is also intentionally deferred: it needs an approved raw
+That Archive path remains intentionally deferred: it needs an approved raw
 payload/provenance and retention contract, not an implicit copy of data.
 The required separation of raw source, device context, and mapping versions is
 described in Core's `docs/architecture/wearable-data-lineage.md`.
