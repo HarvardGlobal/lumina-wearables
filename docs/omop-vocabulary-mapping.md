@@ -31,12 +31,13 @@ OMOP `concept` tables. At write time it resolves, for example,
 `(LOINC, 40443-4)` to the active local OMOP concept and uses that row's numeric
 `concept_id` and domain.
 
-The vocabulary release identifier must be retained with the mapping version.
+The vocabulary-release metadata returned by PRomop's concept lookup must be
+retained with the mapping version.
 If a vocabulary update changes a concept's status, domain, or relationship,
 the mapping must be re-reviewed and a new derived export created; previously
 preserved source data must not be rewritten.
 
-## Initial approved mapping candidates
+## Current controlled mapping allow-list
 
 | LUMINA canonical key | Meaning | LOINC code | Expected OMOP domain | UCUM unit | Status |
 | --- | --- | --- | --- | --- | --- |
@@ -66,10 +67,10 @@ The implemented PRomop integration does the following before a row is written:
 
 ## Archive relationship
 
-For a full LUMINA deployment, Archive will preserve the original Open Wearables
-response before any derived metric is promoted. The derived record must link to
-the raw object, Open Wearables version, LUMINA mapping version, Athena
-vocabulary release, device/provider context, and PRomop receipt. The current
-Wearables API preview remains read-only, while the separate protected PRomop
-export route is implemented and tested. Archive preservation remains deferred
-until its dedicated authenticated contract is implemented and tested.
+For a full LUMINA deployment, the future Archive-linked route will preserve the
+original Open Wearables response before its derived metric is promoted. That
+derived record must link to the raw object, Open Wearables version, LUMINA
+mapping version, Athena vocabulary release, device/provider context, and
+PRomop receipt. The separate protected PRomop export route is implemented and
+tested; Archive preservation remains deferred until its dedicated authenticated
+contract is implemented and tested.

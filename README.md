@@ -15,7 +15,7 @@ LUMINA Wearables is licensed under [Apache-2.0](LICENSE). Please read
 [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and the
 [Code of Conduct](CODE_OF_CONDUCT.md) before participating.
 
-Current release: `1.1.4`.
+Current release: `1.1.5`.
 
 ## First pilot: daily resting HR and HRV-SDNN
 
@@ -42,7 +42,8 @@ which providers are ready for each pilot statistic and which are not.
 The implemented standardisation route is **Open Wearables → LUMINA semantic
 validation → LOINC code → PRomop's locally loaded Athena vocabulary concept →
 PRomop Measurement**. Athena is a vocabulary-release source, not a live runtime
-conversion service. The complete strategy and initial mapping candidates are in
+conversion service. The complete strategy and current controlled mapping
+allow-list are in
 [docs/omop-vocabulary-mapping.md](docs/omop-vocabulary-mapping.md).
 
 ## Run it by itself

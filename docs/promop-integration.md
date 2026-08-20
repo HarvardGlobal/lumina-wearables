@@ -2,7 +2,7 @@
 
 ## Current, safe boundary
 
-LUMINA Wearables `1.1.4` previews and can explicitly export two exact daily
+LUMINA Wearables `1.1.5` previews and can explicitly export two exact daily
 metrics from Open Wearables: `resting_hr` and `hrv_sdnn`. It uses PRomop's
 existing service-token-protected concept lookup and generic OMOP write APIs.
 It never accesses the PRomop database directly and does not use PRomop's

@@ -10,8 +10,8 @@ this guide require the same semantic review as a mapping change.
 **Pinned Open Wearables source:** `0.7.0` at commit
 `cb3ad1fd1141138179d27f7e787a1d0049a071c9`
 
-**Scope:** initial read-only LUMINA flow. No data is yet written to PRomop or
-Archive by this service.
+**Scope:** initial LUMINA flow. The protected exporter can write the two
+approved daily metrics to PRomop; this service does not write to Archive yet.
 
 ## Standardisation path
 
@@ -22,9 +22,10 @@ Device/provider -> Open Wearables -> LUMINA semantic validation -> LOINC code
 
 Athena supplies the OMOP vocabulary release loaded into PRomop; it is not a
 live translation step. PRomop resolves the approved `(vocabulary_id,
-concept_code)` pair to its local numeric OMOP `concept_id` before a write. See
-[omop-vocabulary-mapping.md](omop-vocabulary-mapping.md) for the required
-release, validation, and provenance rules.
+concept_code)` pair to its local numeric OMOP `concept_id` before a write. The
+export receipt returns the vocabulary-version metadata supplied by PRomop. See
+[omop-vocabulary-mapping.md](omop-vocabulary-mapping.md) for the validation and
+provenance rules.
 
 | LUMINA key | Meaning and temporal resolution | Open Wearables source | Unit | PRomop status | OMOP concept in current PRomop | Rules / exclusions |
 | --- | --- | --- | --- | --- | --- | --- |
