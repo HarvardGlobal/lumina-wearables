@@ -15,7 +15,7 @@ from app.settings import (
     WearablesExportSettings,
 )
 
-app = FastAPI(title="LUMINA Wearables", version="1.2.3")
+app = FastAPI(title="LUMINA Wearables", version="1.2.4")
 
 
 def approved_daily_samples(user_id: UUID, start_date: date, end_date: date):

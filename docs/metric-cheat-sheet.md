@@ -31,32 +31,37 @@ provenance rules.
 
 The four device connections are: **Apple Health → iOS HealthKit SDK push**;
 **Garmin → OAuth 2.0 plus webhook**; **WHOOP → OAuth 2.0 plus webhook/poll**;
-and **Fitbit → OAuth 2.0 with PKCE polling**. The Fitbit connection exists
-upstream, but the pinned release does not provide verified daily-summary fields
-for this export path.
+and **Google Health Connect → Android SDK push**. Fitbit is not the fourth
+source in this matrix: it is a separate Google-owned provider whose pinned
+Open Wearables adapter does not currently provide the required summary path.
 
 ## Preview metrics: four-device to PRomop matrix
 
-This is the single operational table for the fields that the current preview
-and `daily-summaries/export` route can emit. A dash means that the pinned Open
-Wearables source does not verify that device-specific path.
+This is the single complete 18-metric device-to-OMOP matrix. A dash means the
+pinned Open Wearables source does not verify a safe device-specific path. “Map
+only” means the PRomop mapping exists but the daily-summary route deliberately
+does not emit it yet.
 
-| LUMINA key | Apple Health variable | Garmin variable | WHOOP variable | Fitbit variable | Open Wearables field | LOINC/HK-Wearable | PRomop table |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| `steps` | `HKQuantityTypeIdentifierStepCount` | daily `steps` | — | — | ActivitySummary.`steps` | LOINC `55423-8` | Observation |
-| `active_minutes` | `HKQuantityTypeIdentifierAppleExerciseTime` | daily `activeTimeInSeconds` | — | — | ActivitySummary.`active_minutes` | LOINC `55411-3` | Observation |
-| `resting_hr` | `HKQuantityTypeIdentifierRestingHeartRate` | `restingHeartRateInBeatsPerMinute` | `score.resting_heart_rate` | — | RecoverySummary.`resting_heart_rate_bpm` | LOINC `40443-4` | Measurement |
-| `hrv_sdnn` | `HKQuantityTypeIdentifierHeartRateVariabilitySDNN` | Health Snapshot `sdrr_hrv` | — (RMSSD only) | — | RecoverySummary.`avg_hrv_sdnn_ms` | LOINC `80404-7` | Measurement |
-| `spo2` | `HKQuantityTypeIdentifierOxygenSaturation` | daily `averageSpo2` / sleep oxygen | — | — | RecoverySummary.`avg_spo2_percent`; SleepSummary fallback | LOINC `59408-5` | Measurement |
-| `respiratory_rate` | `HKQuantityTypeIdentifierRespiratoryRate` | sleep `avgWakingRespirationValue` | — | — | SleepSummary.`avg_respiratory_rate` | LOINC `9279-1` | Measurement |
-| `sleep_duration` | HealthKit sleep records | sleep duration fields | sleep duration data | — | SleepSummary.`duration_minutes` | LOINC `93832-4` | Observation |
-| `flights_climbed` | `HKQuantityTypeIdentifierFlightsClimbed` | daily `floorsClimbed` | — | — | ActivitySummary.`floors_climbed` | LOINC `100304-5` | Observation |
-| `active_energy` | `HKQuantityTypeIdentifierActiveEnergyBurned` | daily `activeKilocalories` | — | — | ActivitySummary.`active_calories_kcal` | LOINC `93819-1` | Measurement |
-
-The full 18-metric registry, including mappings which are deliberately not in
-the preview because their pinned Open Wearables source is not semantically
-exact or does not carry a valid date, is in
-[omop-vocabulary-mapping.md](omop-vocabulary-mapping.md).
+| LUMINA key | Apple Health variable | Garmin variable | WHOOP variable | Google Health Connect variable | Open Wearables field | LOINC/HK-Wearable | PRomop table | Current route |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `steps` | `HKQuantityTypeIdentifierStepCount` | daily `steps` | — | `STEP_COUNT` | ActivitySummary.`steps` | LOINC `55423-8` | Observation | Preview/export |
+| `active_minutes` | `HKQuantityTypeIdentifierAppleExerciseTime` | daily `activeTimeInSeconds` | — | — | ActivitySummary.`active_minutes` | LOINC `55411-3` | Observation | Preview/export |
+| `resting_hr` | `HKQuantityTypeIdentifierRestingHeartRate` | `restingHeartRateInBeatsPerMinute` | `score.resting_heart_rate` | `RESTING_HEART_RATE` | RecoverySummary.`resting_heart_rate_bpm` | LOINC `40443-4` | Measurement | Preview/export |
+| `hrv_sdnn` | `HKQuantityTypeIdentifierHeartRateVariabilitySDNN` | Health Snapshot `sdrr_hrv` | — (RMSSD only) | — (RMSSD only) | RecoverySummary.`avg_hrv_sdnn_ms` | LOINC `80404-7` | Measurement | Preview/export for Apple/Garmin |
+| `hrv_rmssd` | — | — (sleep HRV semantics not verified) | `score.hrv_rmssd_milli` | `HEART_RATE_VARIABILITY` | `heart_rate_variability_rmssd` | HK-Wearable `HK-WEAR-HRV-RMSSD` | Measurement | Map only |
+| `spo2` | `HKQuantityTypeIdentifierOxygenSaturation` | `averageSpo2` / sleep oxygen | — | `OXYGEN_SATURATION` | RecoverySummary.`avg_spo2_percent`; SleepSummary fallback | LOINC `59408-5` | Measurement | Preview/export |
+| `respiratory_rate` | `HKQuantityTypeIdentifierRespiratoryRate` | sleep `avgWakingRespirationValue` | — | `RESPIRATORY_RATE` | SleepSummary.`avg_respiratory_rate` | LOINC `9279-1` | Measurement | Preview/export |
+| `sleep_duration` | HealthKit sleep records | sleep duration fields | sleep duration data | Health Connect sleep records | SleepSummary.`duration_minutes` | LOINC `93832-4` | Observation | Preview/export when summary is present |
+| `vo2_max` | `HKQuantityTypeIdentifierVO2Max` | — | — | `VO2_MAX` | `vo2_max` series; no dated summary field | LOINC `94122-9` | Measurement | Map only |
+| `distance` | `HKQuantityTypeIdentifierDistanceWalkingRunning` | `distanceInMeters` | workout `distance_meter` | `DISTANCE` | `distance_walking_running`; no safe dated walking summary | LOINC `41953-1` | Measurement | Map only |
+| `walking_speed` | `HKQuantityTypeIdentifierWalkingSpeed` | — | — | — | walking-speed series; no dated summary field | LOINC `41957-2` | Measurement | Map only |
+| `walking_step_length` | `HKQuantityTypeIdentifierWalkingStepLength` | — | — | — | gait series; no dated summary field | HK-Wearable `HK-WEAR-STEP-LENGTH` | Measurement | Map only |
+| `walking_double_support_pct` | `HKQuantityTypeIdentifierWalkingDoubleSupportPercentage` | — | — | — | gait series; no dated summary field | HK-Wearable `HK-WEAR-DBL-SUPPORT` | Measurement | Map only |
+| `walking_hr_avg` | `HKQuantityTypeIdentifierWalkingHeartRateAverage` | — | — | — | walking-HR series; no dated summary field | HK-Wearable `HK-WEAR-WALK-HR` | Measurement | Map only |
+| `flights_climbed` | `HKQuantityTypeIdentifierFlightsClimbed` | daily `floorsClimbed` | — | `FLOORS_CLIMBED` | ActivitySummary.`floors_climbed` | LOINC `100304-5` | Observation | Preview/export |
+| `active_energy` | `HKQuantityTypeIdentifierActiveEnergyBurned` | daily `activeKilocalories` | — | `ACTIVE_CALORIES_BURNED` | ActivitySummary.`active_calories_kcal` | LOINC `93819-1` | Measurement | Preview/export |
+| `basal_energy` | `HKQuantityTypeIdentifierBasalEnergyBurned` | daily `bmrKilocalories` | — | `BASAL_METABOLIC_RATE` | `basal_energy`; no separate dated summary field | HK-Wearable `HK-WEAR-BASAL-ENERGY` | Measurement | Map only |
+| `body_mass` | `HKQuantityTypeIdentifierBodyMass` | body-composition weight | — | `WEIGHT` | BodySummary latest `weight_kg`, without measurement date | LOINC `29463-7` | Measurement | Map only |
 
 ### Current upstream safety restriction
 
