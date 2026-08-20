@@ -15,7 +15,7 @@ LUMINA Wearables is licensed under [Apache-2.0](LICENSE). Please read
 [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and the
 [Code of Conduct](CODE_OF_CONDUCT.md) before participating.
 
-Current release: `1.2.1`.
+Current release: `1.2.2`.
 
 ## Daily-summary export and full PRomop registry
 
