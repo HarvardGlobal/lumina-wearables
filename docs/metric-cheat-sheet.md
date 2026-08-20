@@ -33,30 +33,30 @@ The four device connections are: **Apple Health → iOS HealthKit SDK push**;
 **Garmin → OAuth 2.0 plus webhook**; **WHOOP → OAuth 2.0 plus webhook/poll**;
 and **Fitbit → OAuth 2.0 with PKCE polling**. The Fitbit connection exists
 upstream, but the pinned release does not provide verified daily-summary fields
-for this export path. The single table below is the complete device-to-OMOP
-sequence for every registry metric.
+for this export path.
 
-| LUMINA key | Four-device connection and device field | Open Wearables normalisation and summary field | LOINC/HK-Wearable → PRomop table | Unit | Status / safety rule |
-| --- | --- | --- | --- | --- | --- |
-| `steps` | Apple Health SDK `APPLE_STEP_COUNT`; Garmin daily `steps`; WHOOP no verified daily field; Fitbit unavailable | `steps` → ActivitySummary.`steps` | LOINC `55423-8` → Observation | `/d` | Automatic only when the dated summary field exists. |
-| `active_minutes` | Apple Health SDK move/exercise time; Garmin `activeTimeInSeconds`; WHOOP/ Fitbit unverified | activity-duration normalisation → ActivitySummary.`active_minutes` | LOINC `55411-3` → Observation | `min` | Automatic only after Open Wearables emits the daily summary. |
-| `resting_hr` | Apple Health `HKQuantityTypeIdentifierRestingHeartRate`; Garmin `restingHeartRateInBeatsPerMinute`; WHOOP `score.resting_heart_rate`; Fitbit unavailable | `resting_heart_rate` → RecoverySummary.`resting_heart_rate_bpm` | LOINC `40443-4` → Measurement | `/min` | Never substitute raw or average HR. |
-| `hrv_sdnn` | Apple Health `HKQuantityTypeIdentifierHeartRateVariabilitySDNN`; Garmin Health Snapshot `sdrr_hrv`; WHOOP RMSSD; Fitbit unavailable | `heart_rate_variability_sdnn` → RecoverySummary.`avg_hrv_sdnn_ms` | LOINC `80404-7` → Measurement | `ms` | Automatic for Apple/Garmin only; WHOOP RMSSD is blocked. |
-| `hrv_rmssd` | WHOOP `score.hrv_rmssd_milli`; Apple/Garmin/ Fitbit no verified daily route | `heart_rate_variability_rmssd` but no verified daily summary | HK-Wearable `HK-WEAR-HRV-RMSSD` → Measurement | `ms` | Registry only; never substitute for SDNN. |
-| `spo2` | Apple Health `HKQuantityTypeIdentifierOxygenSaturation`; Garmin `averageSpo2`/sleep oxygen; WHOOP/Fitbit unverified | `oxygen_saturation` → RecoverySummary.`avg_spo2_percent`, sleep fallback | LOINC `59408-5` → Measurement | `%` | Recovery takes precedence when both exist. |
-| `respiratory_rate` | Apple Health `HKQuantityTypeIdentifierRespiratoryRate`; Garmin sleep respiration; WHOOP/Fitbit unverified | `respiratory_rate` → SleepSummary.`avg_respiratory_rate` | LOINC `9279-1` → Measurement | `/min` | Automatic only when the dated sleep summary exists. |
-| `sleep_duration` | Apple Health sleep records; Garmin sleep summary; WHOOP sleep data; Fitbit unavailable | sleep-session normalisation → SleepSummary.`duration_minutes` | LOINC `93832-4` → Observation | `h` | Lossless minutes-to-hours conversion only. |
-| `vo2_max` | Apple/Android SDK can ingest VO₂ max; Garmin/WHOOP/Fitbit no verified daily route | `vo2_max`; no dated summary endpoint field | LOINC `94122-9` → Measurement | `mL/kg/min` | Registry only; not inferred from scores. |
-| `distance` | Apple Health walking/running distance; Garmin `distanceInMeters`; WHOOP workout distance; Fitbit unavailable | `distance_walking_running`; generic ActivitySummary distance is not accepted | LOINC `41953-1` → Measurement | `km` | Registry only until walking context reaches a dated summary. |
-| `walking_speed` | Apple Health walking speed; Garmin/WHOOP/Fitbit no verified daily route | walking-speed series; no dated summary field | LOINC `41957-2` → Measurement | `km/hr` | Registry only; requires walking context. |
-| `walking_step_length` | Apple Health walking step length; Garmin/WHOOP/Fitbit no verified daily route | gait series; no dated summary field | HK-Wearable `HK-WEAR-STEP-LENGTH` → Measurement | `cm` | Registry only; requires gait context. |
-| `walking_double_support_pct` | Apple Health double-support percentage; Garmin/WHOOP/Fitbit no verified daily route | gait series; no dated summary field | HK-Wearable `HK-WEAR-DBL-SUPPORT` → Measurement | `%` | Registry only; requires gait context. |
-| `walking_hr_avg` | Apple Health walking HR average; Garmin/WHOOP/Fitbit no verified daily route | walking-HR series; no dated summary field | HK-Wearable `HK-WEAR-WALK-HR` → Measurement | `/min` | Registry only; requires walking context. |
-| `flights_climbed` | Apple Health `HKQuantityTypeIdentifierFlightsClimbed`; Garmin `floorsClimbed`; WHOOP/Fitbit unverified | `flights_climbed` → ActivitySummary.`floors_climbed` | LOINC `100304-5` → Observation | `{flights}` | Automatic when the dated summary field exists. |
-| `active_energy` | Apple Health `HKQuantityTypeIdentifierActiveEnergyBurned`; Garmin `activeKilocalories`; WHOOP/Fitbit unverified | `energy` → ActivitySummary.`active_calories_kcal` | LOINC `93819-1` → Measurement | `kcal` | Automatic when the dated summary field exists. |
-| `basal_energy` | Apple Health `HKQuantityTypeIdentifierBasalEnergyBurned`; Garmin `bmrKilocalories`; WHOOP/Fitbit unverified | `basal_energy`; no separate dated summary field | HK-Wearable `HK-WEAR-BASAL-ENERGY` → Measurement | `kcal` | Registry only; never derive from total calories. |
-| `body_mass` | Apple Health `HKQuantityTypeIdentifierBodyMass`; Garmin body composition; WHOOP/Fitbit unverified | `weight` → BodySummary latest weight, without measurement date | LOINC `29463-7` → Measurement | `kg` | Registry only; never assign today's date to an undated value. |
-| `heart_rate` | Apple/Garmin/WHOOP time series; Fitbit unsupported here | Open Wearables `heart_rate` time series | No PRomop daily target | `bpm` | Archive candidate; high-frequency data is not daily resting HR. |
+## Preview metrics: four-device to PRomop matrix
+
+This is the single operational table for the fields that the current preview
+and `daily-summaries/export` route can emit. A dash means that the pinned Open
+Wearables source does not verify that device-specific path.
+
+| LUMINA key | Apple Health variable | Garmin variable | WHOOP variable | Fitbit variable | Open Wearables field | LOINC/HK-Wearable | PRomop table |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `steps` | `HKQuantityTypeIdentifierStepCount` | daily `steps` | — | — | ActivitySummary.`steps` | LOINC `55423-8` | Observation |
+| `active_minutes` | `HKQuantityTypeIdentifierAppleExerciseTime` | daily `activeTimeInSeconds` | — | — | ActivitySummary.`active_minutes` | LOINC `55411-3` | Observation |
+| `resting_hr` | `HKQuantityTypeIdentifierRestingHeartRate` | `restingHeartRateInBeatsPerMinute` | `score.resting_heart_rate` | — | RecoverySummary.`resting_heart_rate_bpm` | LOINC `40443-4` | Measurement |
+| `hrv_sdnn` | `HKQuantityTypeIdentifierHeartRateVariabilitySDNN` | Health Snapshot `sdrr_hrv` | — (RMSSD only) | — | RecoverySummary.`avg_hrv_sdnn_ms` | LOINC `80404-7` | Measurement |
+| `spo2` | `HKQuantityTypeIdentifierOxygenSaturation` | daily `averageSpo2` / sleep oxygen | — | — | RecoverySummary.`avg_spo2_percent`; SleepSummary fallback | LOINC `59408-5` | Measurement |
+| `respiratory_rate` | `HKQuantityTypeIdentifierRespiratoryRate` | sleep `avgWakingRespirationValue` | — | — | SleepSummary.`avg_respiratory_rate` | LOINC `9279-1` | Measurement |
+| `sleep_duration` | HealthKit sleep records | sleep duration fields | sleep duration data | — | SleepSummary.`duration_minutes` | LOINC `93832-4` | Observation |
+| `flights_climbed` | `HKQuantityTypeIdentifierFlightsClimbed` | daily `floorsClimbed` | — | — | ActivitySummary.`floors_climbed` | LOINC `100304-5` | Observation |
+| `active_energy` | `HKQuantityTypeIdentifierActiveEnergyBurned` | daily `activeKilocalories` | — | — | ActivitySummary.`active_calories_kcal` | LOINC `93819-1` | Measurement |
+
+The full 18-metric registry, including mappings which are deliberately not in
+the preview because their pinned Open Wearables source is not semantically
+exact or does not carry a valid date, is in
+[omop-vocabulary-mapping.md](omop-vocabulary-mapping.md).
 
 ### Current upstream safety restriction
 
